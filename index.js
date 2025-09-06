@@ -29,7 +29,12 @@ app.post('/login', (req, res) => {
     const { username, password } = req.body;
     
     // CONSULTA SQL VULNERÁVEL 🚨
-    const query = `SELECT * FROM users WHERE username = '${username}' AND password = '${password}'`;
+    // Aqui os valores de `username` e `password` estão sendo concatenados diretamente na query.
+    // Isso permite que um atacante insira código SQL malicioso (SQL Injection).
+    // Exemplo: username = `' OR '1'='1' --`
+    // O SQL resultante será sempre verdadeiro e dará acesso não autorizado.
+    // Resultado: o atacante consegue logar sem saber a senha real.
+    const query = `SELECT * FROM users WHERE username = '' OR '1'='1' -- ' AND password = '';`;
     
     db.all(query, [], (err, rows) => {
         if (err) {

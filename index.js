@@ -27,16 +27,23 @@ app.get('/', (req, res) => {
 
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
-    
+
     // CONSULTA SQL VULNERÁVEL 🚨
-    // Aqui os valores de `username` e `password` estão sendo concatenados diretamente na query.
-    // Isso permite que um atacante insira código SQL malicioso (SQL Injection).
-    // Exemplo: username = `' OR '1'='1' --`
-    // O SQL resultante será sempre verdadeiro e dará acesso não autorizado.
-    // Resultado: o atacante consegue logar sem saber a senha real.
-    const query = `SELECT * FROM users WHERE username = '' OR '1'='1' -- ' AND password = '';`;
-    
-    db.all(query, [], (err, rows) => {
+
+    // Correção da consulta (Inserção dos caracteres ? aonde os parâmetros serão inseridos)
+    /* No caso do SQLite, o caractere ? é usado como um placeholder para
+    valores que serão passados posteriormente, evitando assim a injeção de SQL. OUtros
+    bancos de dados podem usar outros caracteres, como $1, $2, etc.
+    */
+    const query = `SELECT * FROM users WHERE username = ? AND password = ?'`;
+    const query2 = 'SELECT * FROM flags'; // Consulta segura para obter a flag
+    // Consulta com problema
+    /*
+    valores passados em db.all deve ser um array no segundo argumento, como 
+    um vetor. Tais valores são sanitizados antes de serem inseridos na consulta.
+     */
+    // db.all(query, [], (err, rows) => {
+    db.all(query, [username, password], (err, rows) => {
         if (err) {
             return res.send('Erro no servidor');
         }
